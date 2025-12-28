@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<articles>
+    <article>
+        <id>1</id>
+        <titre>Guide d'utilisation</titre>
+        <contenu><![CDATA[<p>Voici un exemple de contenu avec des <strong>balises HTML</strong>.</p>
+<p>Les caractères spéciaux comme &, <, >, " et ' sont préservés sans échappement.</p>
+<ul>
+    <li>Item 1 avec <em>emphase</em></li>
+    <li>Item 2 avec un lien: <a href="http://example.com">Cliquez ici</a></li>
+</ul>]]></contenu>
+        <auteur>Jean Dupont</auteur>
+        <date>2025-12-28</date>
+    </article>
+    <article>
+        <id>2</id>
+        <titre>Données JSON dans XML</titre>
+        <contenu><![CDATA[{"nom": "Produit", "prix": 99.99, "disponible": true, "tags": ["nouveau", "promotion"]}]]></contenu>
+        <auteur>Marie Martin</auteur>
+        <date>2025-12-28</date>
+    </article>
+    <article>
+        <id>3</id>
+        <titre>Code SQL</titre>
+        <contenu><![CDATA[SELECT * FROM clients WHERE age > 18 AND statut = 'actif';]]></contenu>
+        <auteur>Pierre Durand</auteur>
+        <date>2025-12-28</date>
+    </article>
+</articles>

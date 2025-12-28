@@ -1,0 +1,98 @@
+# Exemple de Job Talend avec tAdvancedFileOutputXML et CDATA
+
+## Structure du Job
+
+[tRowGenerator] --> [tAdvancedFileOutputXML]
+
+## Configuration tRowGenerator
+
+Schéma de sortie:
+- id (Integer): 1, 2, 3
+- titre (String): "Article 1", "Article 2", "Article 3"
+- contenu (String): "<p>Contenu avec <strong>HTML</strong> & caractères spéciaux</p>"
+- auteur (String): "Jean Dupont", "Marie Martin", "Pierre Durand"
+
+Nombre de lignes: 3
+
+## Configuration tAdvancedFileOutputXML
+
+### Onglet Basic Settings
+
+1. **File name**: "/path/to/output/articles.xml"
+2. **Row separator**: Utiliser par défaut
+3. **Encoding**: UTF-8
+
+### Onglet Advanced Settings - Mapping Tree
+
+Structure XML:
+```
+root
+└── articles
+    └── article (loop on Main)
+        ├── id (column: id, type: Element)
+        ├── titre (column: titre, type: Element)
+        ├── contenu (column: contenu, type: Element, USE CDATA: ✓)
+        └── auteur (column: auteur, type: Element)
+```
+
+### Configuration détaillée du mapping
+
+Pour l'élément "contenu":
+1. Sélectionner la colonne "contenu" dans le mapping
+2. Propriétés de l'élément:
+   - Node Type: Element
+   - Column: contenu
+   - **Use CDATA: true** ← IMPORTANT
+   - Null handling: Empty
+
+## Résultat XML attendu
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<articles>
+    <article>
+        <id>1</id>
+        <titre>Article 1</titre>
+        <contenu><![CDATA[<p>Contenu avec <strong>HTML</strong> & caractères spéciaux</p>]]></contenu>
+        <auteur>Jean Dupont</auteur>
+    </article>
+    <article>
+        <id>2</id>
+        <titre>Article 2</titre>
+        <contenu><![CDATA[<p>Contenu avec <strong>HTML</strong> & caractères spéciaux</p>]]></contenu>
+        <auteur>Marie Martin</auteur>
+    </article>
+    <article>
+        <id>3</id>
+        <titre>Article 3</titre>
+        <contenu><![CDATA[<p>Contenu avec <strong>HTML</strong> & caractères spéciaux</p>]]></contenu>
+        <auteur>Pierre Durand</auteur>
+    </article>
+</articles>
+```
+
+## Alternative avec tMap (si l'option CDATA n'est pas disponible)
+
+[tRowGenerator] --> [tMap] --> [tAdvancedFileOutputXML]
+
+### Configuration tMap
+
+Input: row (de tRowGenerator)
+Output: out
+
+Mapping:
+- id: row.id
+- titre: row.titre
+- contenu_raw: row.contenu (garder le contenu original)
+- auteur: row.auteur
+
+### Configuration tAdvancedFileOutputXML
+
+Dans ce cas, configurez le champ "contenu_raw" avec l'option CDATA dans le mapping tree.
+
+## Notes importantes
+
+1. **Version de Talend**: Cette fonctionnalité est disponible dans la plupart des versions de Talend (6.x, 7.x, 8.x)
+2. **Performance**: L'utilisation de CDATA n'impacte pas significativement les performances
+3. **Taille des données**: CDATA peut légèrement augmenter la taille du fichier XML
+4. **Validation XML**: Les fichiers générés avec CDATA sont valides selon les standards XML
