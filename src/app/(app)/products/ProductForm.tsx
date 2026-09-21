@@ -21,7 +21,7 @@ export function ProductForm({ product }: { product?: Product }) {
             name="name"
             required
             defaultValue={product?.name}
-            placeholder="Huile d'olive extra vierge"
+            placeholder="Kama"
             className={inputClasses}
           />
         </Field>

@@ -3,12 +3,12 @@ export function cn(...classes: Array<string | false | null | undefined>) {
 }
 
 const currencyFormatter = new Intl.NumberFormat("fr-FR", {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
 });
 
 export function formatMoney(value: number) {
-  return `${currencyFormatter.format(value)} DH`;
+  return `${currencyFormatter.format(value)} FCFA`;
 }
 
 const numberFormatter = new Intl.NumberFormat("fr-FR", {

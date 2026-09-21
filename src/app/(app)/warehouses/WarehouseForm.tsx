@@ -20,7 +20,7 @@ export function WarehouseForm({ warehouse }: { warehouse?: Warehouse }) {
           name="name"
           required
           defaultValue={warehouse?.name}
-          placeholder="Entrepôt Casablanca"
+          placeholder="Entrepôt Dakar"
           className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
         />
       </div>
@@ -29,7 +29,7 @@ export function WarehouseForm({ warehouse }: { warehouse?: Warehouse }) {
         <input
           name="location"
           defaultValue={warehouse?.location ?? ""}
-          placeholder="Zone industrielle, Casablanca"
+          placeholder="Zone industrielle, Dakar"
           className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
         />
       </div>
