@@ -1,0 +1,175 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  VENDEUR
+}
+
+enum ClientType {
+  GROS
+  DETAIL
+}
+
+enum MovementType {
+  ENTREE
+  SORTIE
+  AJUSTEMENT
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(VENDEUR)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  purchases Purchase[]
+  sales     Sale[]
+}
+
+model Warehouse {
+  id        String   @id @default(cuid())
+  name      String
+  location  String?
+  createdAt DateTime @default(now())
+
+  stockLots      StockLot[]
+  purchases      Purchase[]
+  sales          Sale[]
+  stockMovements StockMovement[]
+}
+
+model Product {
+  id                 String   @id @default(cuid())
+  name               String
+  description        String?
+  litersPerContainer Float    @default(200)
+  wholesalePrice     Float    @default(0)
+  retailPrice        Float    @default(0)
+  minStockLiters     Float    @default(0)
+  active             Boolean  @default(true)
+  createdAt          DateTime @default(now())
+
+  stockLots      StockLot[]
+  purchaseLines  PurchaseLine[]
+  saleLines      SaleLine[]
+  stockMovements StockMovement[]
+
+  @@unique([name])
+}
+
+model StockLot {
+  id             String    @id @default(cuid())
+  productId      String
+  product        Product   @relation(fields: [productId], references: [id])
+  warehouseId    String
+  warehouse      Warehouse @relation(fields: [warehouseId], references: [id])
+  quantityLiters Float     @default(0)
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([productId, warehouseId])
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  createdAt DateTime @default(now())
+
+  purchases Purchase[]
+}
+
+model Client {
+  id        String     @id @default(cuid())
+  name      String
+  type      ClientType @default(DETAIL)
+  phone     String?
+  email     String?
+  address   String?
+  createdAt DateTime   @default(now())
+
+  sales Sale[]
+}
+
+model Purchase {
+  id          String    @id @default(cuid())
+  reference   String    @unique
+  supplierId  String?
+  supplier    Supplier? @relation(fields: [supplierId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  date        DateTime  @default(now())
+  notes       String?
+  totalCost   Float     @default(0)
+  createdById String?
+  createdBy   User?     @relation(fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
+
+  lines PurchaseLine[]
+}
+
+model PurchaseLine {
+  id                 String   @id @default(cuid())
+  purchaseId         String
+  purchase           Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  productId          String
+  product            Product  @relation(fields: [productId], references: [id])
+  quantityContainers Float    @default(0)
+  quantityLiters     Float
+  unitCostPerLiter   Float
+  lineTotal          Float
+}
+
+model Sale {
+  id          String     @id @default(cuid())
+  reference   String     @unique
+  clientId    String?
+  client      Client?    @relation(fields: [clientId], references: [id])
+  warehouseId String
+  warehouse   Warehouse  @relation(fields: [warehouseId], references: [id])
+  saleType    ClientType @default(DETAIL)
+  date        DateTime   @default(now())
+  notes       String?
+  totalAmount Float      @default(0)
+  createdById String?
+  createdBy   User?      @relation(fields: [createdById], references: [id])
+  createdAt   DateTime   @default(now())
+
+  lines SaleLine[]
+}
+
+model SaleLine {
+  id                 String   @id @default(cuid())
+  saleId             String
+  sale               Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId          String
+  product            Product  @relation(fields: [productId], references: [id])
+  quantityContainers Float    @default(0)
+  quantityLiters     Float
+  unitPricePerLiter  Float
+  lineTotal          Float
+}
+
+model StockMovement {
+  id             String       @id @default(cuid())
+  productId      String
+  product        Product      @relation(fields: [productId], references: [id])
+  warehouseId    String
+  warehouse      Warehouse    @relation(fields: [warehouseId], references: [id])
+  type           MovementType
+  quantityLiters Float
+  reference      String?
+  note           String?
+  createdAt      DateTime     @default(now())
+}
