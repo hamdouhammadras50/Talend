@@ -42,8 +42,8 @@
         <I_LIGNE_CMDE>1</I_LIGNE_CMDE>
         <I_EAN>3017620422003</I_EAN>
         <N_MULTIPLE_COMMANDE>1</N_MULTIPLE_COMMANDE>
-        <I_OPERATION></I_OPERATION>
-        <L_OPERATION></L_OPERATION>
+        <I_OPERATION/>
+        <L_OPERATION/>
       </Ligne>
       <Ligne>
         <CODE_ARTICLE_FOURN_CMDE>AF500102</CODE_ARTICLE_FOURN_CMDE>
@@ -61,8 +61,8 @@
         <I_LIGNE_CMDE>2</I_LIGNE_CMDE>
         <I_EAN>3017620422003</I_EAN>
         <N_MULTIPLE_COMMANDE>1</N_MULTIPLE_COMMANDE>
-        <I_OPERATION></I_OPERATION>
-        <L_OPERATION></L_OPERATION>
+        <I_OPERATION/>
+        <L_OPERATION/>
       </Ligne>
     </Lignes>
   </Commande>
@@ -108,8 +108,8 @@
         <I_LIGNE_CMDE>1</I_LIGNE_CMDE>
         <I_EAN>3017620422003</I_EAN>
         <N_MULTIPLE_COMMANDE>1</N_MULTIPLE_COMMANDE>
-        <I_OPERATION></I_OPERATION>
-        <L_OPERATION></L_OPERATION>
+        <I_OPERATION/>
+        <L_OPERATION/>
       </Ligne>
     </Lignes>
   </Commande>

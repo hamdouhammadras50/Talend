@@ -4,13 +4,13 @@
 Usage : python3 build_talend_zip.py <dossier_sortie>
 
 Le job produit :
-  tPrejob -> tOracleConnection
-  tOracleInput (requete extraction_commandes.sql) --row1--> tJavaFlex (XML Entete/Lignes)
-    --OnSubjobOk--> tJava (bilan) --RunIf(SFTP_ACTIVE && commandes > 0)--> tFTPPut (SFTP)
+  tPrejob -> tJava (nom du fichier) -> tOracleConnection
+  tOracleInput (requete extraction_commandes.sql) --row1--> tAdvancedFileOutputXML
+    (Commandes / Commande [groupe] / Entete + Lignes / Ligne [boucle])
+  tOracleInput --OnSubjobOk--> tJava (bilan) --RunIf(SFTP_ACTIVE && lignes > 0)--> tFTPPut (SFTP)
   tPostjob -> tOracleClose
 """
 import os
-import re
 import sys
 import uuid
 import zipfile
@@ -47,7 +47,6 @@ CONTEXT = [
     ("DB_PASSWORD", "id_Password", "", "Mot de passe Oracle"),
     ("OUTPUT_DIR", "id_Directory", "C:/Talend/EDICOM/out", "Dossier local du fichier XML"),
     ("FILE_PREFIX", "id_String", "EDICOM_COMMANDES_", "Prefixe du nom de fichier"),
-    ("XML_ROOT", "id_String", "Commandes", "Balise racine englobant les <Commande>"),
     ("SFTP_ACTIVE", "id_Boolean", "false", "false = recette (fichier local uniquement)"),
     ("SFTP_HOST", "id_String", "sftp.edicom.example", "Serveur SFTP EDICOM"),
     ("SFTP_PORT", "id_Integer", "22", "Port SFTP"),
@@ -134,6 +133,27 @@ def subjob(start, title, color):
     )
 
 
+def xml_tree_tables():
+    """Tables ROOT / GROUP / LOOP de tAdvancedFileOutputXML, au format enregistre par
+    l'editeur de mapping de Talend Studio (FOXManager.tableLoader) :
+    PATH, COLUMN, ATTRIBUTE (main = noeud sur le chemin racine -> boucle, sinon branch),
+    VALUE, ORDER (numerotation en profondeur depuis la racine)."""
+    order = iter(range(1, 1000))
+
+    def row(path, column="", main=False):
+        return [("PATH", path), ("COLUMN", column), ("ATTRIBUTE", "main" if main else "branch"),
+                ("VALUE", ""), ("ORDER", str(next(order)))]
+
+    root = [row("/Commandes", main=True)]
+    cmde = "/Commandes/Commande"
+    group = [row(cmde, main=True), row(cmde + "/Entete")]
+    group += [row(f"{cmde}/Entete/{c}", c) for c in HEADER_COLS]
+    group.append(row(cmde + "/Lignes", main=True))
+    ligne = cmde + "/Lignes/Ligne"
+    loop = [row(ligne, main=True)] + [row(f"{ligne}/{c}", c) for c in LINE_COLS]
+    return root, group, loop
+
+
 def build_item():
     ctx = "\n".join(
         f'    <contextParameter comment={quoteattr(c)} name="{n}" prompt="{n}?" promptNeeded="false" '
@@ -141,9 +161,14 @@ def build_item():
         for n, t, v, c in CONTEXT
     )
 
+    root_t, group_t, loop_t = xml_tree_tables()
     nodes = [
         node("tPrejob", "0.102", "tPrejob_1", 64, 64, []),
-        node("tOracleConnection", "0.102", "tOracleConnection_1", 256, 64, [
+        node("tJava", "0.101", "tJava_2", 256, 64, [
+            p("CODE", read("tJava_init.java"), "MEMO_JAVA"),
+            p("LABEL", "Nom du fichier XML"),
+        ]),
+        node("tOracleConnection", "0.102", "tOracleConnection_1", 448, 64, [
             p("CONNECTION_TYPE", "ORACLE_SERVICE_NAME", "CLOSED_LIST"),
             p("DB_VERSION", "ORACLE_18", "CLOSED_LIST"),
             p("HOST", "context.DB_HOST"),
@@ -165,14 +190,25 @@ def build_item():
             p("TRIM_ALL_COLUMN", "true", "CHECK"),
             p("LABEL", "Extraction commandes EDICOM"),
         ], metadata("tOracleInput_1", ALL_COLS)),
-        node("tJavaFlex", "0.101", "tJavaFlex_1", 352, 224, [
-            p("CODE_START", read("tJavaFlex_start.java"), "MEMO_JAVA"),
-            p("CODE_MAIN", read("tJavaFlex_main.java"), "MEMO_JAVA"),
-            p("CODE_END", read("tJavaFlex_end.java"), "MEMO_JAVA"),
-            p("DATA_AUTO_PROPAGATE", "false", "CHECK"),
-            p("IMPORT", "", "MEMO_IMPORT"),
-            p("LABEL", "Generation XML Entete/Lignes"),
-        ], metadata("tJavaFlex_1", ALL_COLS)),
+        node("tAdvancedFileOutputXML", "0.102", "tAdvancedFileOutputXML_1", 352, 224, [
+            p("USESTREAM", "false", "CHECK"),
+            p("FILENAME", '(String) globalMap.get("EDICOM_FILE_PATH")', "FILE"),
+            table("ROOT", root_t),
+            table("GROUP", group_t),
+            table("LOOP", loop_t),
+            p("CREATE", "true", "CHECK"),
+            p("SPLIT", "false", "CHECK"),
+            p("MERGE", "false", "CHECK"),
+            p("PRETTY_COMPACT", "false", "CHECK"),
+            p("FILE_VALID", "false", "CHECK"),
+            p("TRIM", "false", "CHECK"),
+            p("CREATE_EMPTY_ELEMENT", "true", "CHECK"),
+            p("GENERATION_MODE", "Dom4j", "CLOSED_LIST"),
+            p("ENCODING", '"UTF-8"', "ENCODING_TYPE"),
+            p("ENCODING:ENCODING_TYPE", "UTF-8", "TECHNICAL"),
+            p("DELETE_EMPTYFILE", "true", "CHECK"),
+            p("LABEL", "XML EDICOM (Entete / Lignes)"),
+        ], metadata("tAdvancedFileOutputXML_1", ALL_COLS)),
         node("tJava", "0.101", "tJava_1", 64, 384, [
             p("CODE", read("tJava_bilan.java"), "MEMO_JAVA"),
             p("LABEL", "Bilan"),
@@ -204,22 +240,27 @@ def build_item():
 
     # lineStyle = id EConnectionType : FLOW_MAIN=0, ON_SUBJOB_OK=1, ON_COMPONENT_OK=3, RUN_IF=6
     connections = [
-        connection("COMPONENT_OK", "OnComponentOk", 3, "tPrejob_1", "tOracleConnection_1", "OnComponentOk1"),
-        connection("FLOW", "row1", 0, "tOracleInput_1", "tJavaFlex_1", "row1"),
+        connection("COMPONENT_OK", "OnComponentOk", 3, "tPrejob_1", "tJava_2", "OnComponentOk1"),
+        connection("COMPONENT_OK", "OnComponentOk", 3, "tJava_2", "tOracleConnection_1", "OnComponentOk3"),
+        connection("FLOW", "row1", 0, "tOracleInput_1", "tAdvancedFileOutputXML_1", "row1"),
         connection("SUBJOB_OK", "OnSubjobOk", 1, "tOracleInput_1", "tJava_1", "OnSubjobOk1"),
         connection("RUN_IF", "If1", 6, "tJava_1", "tFTPPut_1", "If1", [
             p("CONDITION",
-              'context.SFTP_ACTIVE && globalMap.get("EDICOM_FILE_NAME") != null', "MEMO_JAVA"),
+              'context.SFTP_ACTIVE && globalMap.get("tAdvancedFileOutputXML_1_NB_LINE") != null\n'
+              '&& ((Integer) globalMap.get("tAdvancedFileOutputXML_1_NB_LINE")) > 0', "MEMO_JAVA"),
         ]),
         connection("COMPONENT_OK", "OnComponentOk", 3, "tPostjob_1", "tOracleClose_1", "OnComponentOk2"),
     ]
 
     subjobs = [
         subjob("tPrejob_1", "230;100;0", "255;220;180"),
+        subjob("tJava_2", "230;100;0", "255;220;180"),
+        subjob("tOracleConnection_1", "230;100;0", "255;220;180"),
         subjob("tOracleInput_1", "160;190;240", "220;220;250"),
         subjob("tJava_1", "160;190;240", "220;220;250"),
         subjob("tFTPPut_1", "160;190;240", "220;220;250"),
         subjob("tPostjob_1", "230;100;0", "255;220;180"),
+        subjob("tOracleClose_1", "230;100;0", "255;220;180"),
     ]
 
     return (
@@ -242,7 +283,7 @@ def build_item():
 def build_properties(now, item_id, prop_id, state_id, author_id):
     return f'''<?xml version="1.0" encoding="UTF-8"?>
 <xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:TalendProperties="http://www.talend.org/properties">
-  <TalendProperties:Property xmi:id="{prop_id}" id="{tid()}" label="{JOB}" purpose="Flux XML quotidien des commandes vers EDICOM" description="Extraction APPRODIRECT (fournisseurs 47451 / 01811), generation XML Entete/Lignes, depot SFTP. Planification 07h30 et 10h00." creationDate="{now}" modificationDate="{now}" version="{VERSION}" statusCode="" item="{item_id}" displayName="{JOB}">
+  <TalendProperties:Property xmi:id="{prop_id}" id="{tid()}" label="{JOB}" purpose="Flux XML quotidien des commandes vers EDICOM" description="Extraction APPRODIRECT (fournisseurs 47451 / 01811), generation XML Entete/Lignes (tAdvancedFileOutputXML), depot SFTP. Planification 07h30 et 10h00." creationDate="{now}" modificationDate="{now}" version="{VERSION}" statusCode="" item="{item_id}" displayName="{JOB}">
     <author href="../../TALEND.project#{author_id}"/>
   </TalendProperties:Property>
   <TalendProperties:ItemState xmi:id="{state_id}" path="{FOLDER}"/>
