@@ -150,7 +150,9 @@ def xml_tree_tables():
     group += [row(f"{cmde}/Entete/{c}", c) for c in HEADER_COLS]
     group.append(row(cmde + "/Lignes", main=True))
     ligne = cmde + "/Lignes/Ligne"
-    loop = [row(ligne, main=True)] + [row(f"{ligne}/{c}", c) for c in LINE_COLS]
+    # CODE_CMDE est repris dans chaque <Ligne> (meme colonne que l'en-tete, valeur identique par jointure)
+    loop = [row(ligne, main=True), row(f"{ligne}/CODE_CMDE", "CODE_CMDE")]
+    loop += [row(f"{ligne}/{c}", c) for c in LINE_COLS]
     return root, group, loop
 
 

@@ -46,6 +46,7 @@ Commandes                       (racine)
     │   └── I_GLN_DESTINATAIRE_DE_CMDE
     └── Lignes
         └── Ligne               ← élément de boucle ("Set As Loop Element")
+            ├── CODE_CMDE       ← colonne CODE_CMDE (même valeur que dans l'en-tête)
             ├── CODE_ARTICLE_FOURN_CMDE
             ├── …               ← une balise par colonne de ligne (17)
             └── L_OPERATION
@@ -84,4 +85,4 @@ Laisser `SFTP_ACTIVE = false`, lancer le job (Run) : le fichier XML est créé d
 1. **Balise racine** : un fichier contient plusieurs commandes, elles sont donc englobées dans `<Commandes>` (modifiable dans l'arbre du tAdvancedFileOutputXML). Si EDICOM attend **un fichier par commande**, il faudra adapter le job.
 2. **Doublons entre 07h30 et 10h00** : le filtre `date_envoi_cmde > sysdate - 1` (24 h glissantes) reprend à 10h00 les commandes déjà envoyées à 07h30. Il faudra peut-être un autre filtre, par exemple un flag d'envoi ou la date du dernier passage.
 3. **Format des dates** : ISO (`YYYY-MM-DD`, et `YYYY-MM-DD HH24:MI:SS` pour `DATE_ENVOI_CMDE`), modifiable dans la requête.
-4. **Colonnes des lignes** : la requête d'origine utilise `article_commande_envoi.*`. Les colonnes sont ici listées explicitement, d'après le modèle XML du mail. Une balise du modèle était à moitié coupée sur la capture, juste après `<Ligne>`, à vérifier.
+4. **Colonnes des lignes** : la requête d'origine utilise `article_commande_envoi.*`. Les colonnes sont ici listées explicitement, d'après le modèle XML du mail ; `<CODE_CMDE>` est repris en tête de chaque `<Ligne>`.
