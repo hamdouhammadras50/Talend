@@ -284,7 +284,7 @@ def build_properties(now, item_id, prop_id, state_id, author_id):
     return f'''<?xml version="1.0" encoding="UTF-8"?>
 <xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:TalendProperties="http://www.talend.org/properties">
   <TalendProperties:Property xmi:id="{prop_id}" id="{tid()}" label="{JOB}" purpose="Flux XML quotidien des commandes vers EDICOM" description="Extraction APPRODIRECT (fournisseurs 47451 / 01811), generation XML Entete/Lignes (tAdvancedFileOutputXML), depot SFTP. Planification 07h30 et 10h00." creationDate="{now}" modificationDate="{now}" version="{VERSION}" statusCode="" item="{item_id}" displayName="{JOB}">
-    <author href="../../TALEND.project#{author_id}"/>
+    <author href="../../talend.project#{author_id}"/>
   </TalendProperties:Property>
   <TalendProperties:ItemState xmi:id="{state_id}" path="{FOLDER}"/>
   <TalendProperties:ProcessItem xmi:id="{item_id}" property="{prop_id}" state="{state_id}">
@@ -310,7 +310,10 @@ def main():
     base = f"{PROJECT}/process/{FOLDER}/{JOB}_{VERSION}"
     zip_path = os.path.join(out_dir, f"{JOB}_{VERSION}.zip")
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
-        z.writestr(f"{PROJECT}/TALEND.project", build_project(now, author_id))
+        # Le Studio cherche "talend.project" en minuscules (FileConstants.LOCAL_PROJECT_FILENAME)
+        for d in (f"{PROJECT}/", f"{PROJECT}/process/", f"{PROJECT}/process/{FOLDER}/"):
+            z.writestr(d, "")
+        z.writestr(f"{PROJECT}/talend.project", build_project(now, author_id))
         z.writestr(base + ".item", build_item())
         z.writestr(base + ".properties", build_properties(now, item_id, prop_id, state_id, author_id))
     print(zip_path)
