@@ -77,9 +77,7 @@ BEGIN
         ,ISNULL(a.comptables_quatuorFk_, '')                               AS CodeQuatuor
         ,ISNULL(a.fichePrincipale_datesGrp_dtMigrationPulse, '')           AS DateMigrationPulse
         ,ISNULL(gc.gerant_, '')                                            AS CodeGerant
-        -- Conversion en texte yyyy-MM-dd : evite que '' devienne 1900-01-01
-        -- pour les PDV sans gerant (LEFT JOIN)
-        ,ISNULL(CONVERT(VARCHAR(10), gc.dateDebut, 23), '')                AS DateDebAffectation
+        ,ISNULL(gc.dateDebut, '')                                          AS DateDebAffectation
         ,ISNULL(a.informationsCommerciales_presse_codeNim, '')             AS CodeNim
         ,@CreatedAtUtc                                                     AS CreatedAtUtc
     FROM EBX_TE_PDV_REF_PDV a
