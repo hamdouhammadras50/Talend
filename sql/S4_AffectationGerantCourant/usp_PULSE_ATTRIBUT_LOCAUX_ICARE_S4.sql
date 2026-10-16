@@ -1,7 +1,7 @@
 /* =============================================================================
    Ticket 52654 - Icare - Interface SAP Attributs : attributs locaux
    -----------------------------------------------------------------------------
-   Procedure : dbo.ps_S4_AffectationGerantCourant
+   Procedure : dbo.usp_PULSE_ATTRIBUT_LOCAUX_ICARE_S4
    Usage     : source du job Talend qui alimente la table du sas S4
                S4_AffectationGerantCourant (traitement quotidien, en FULL).
 
@@ -21,7 +21,13 @@
      3. Surfaces restreintes a 2 chiffres apres le separateur decimal
         (DECIMAL(18,2), arrondi). On ne passe plus par FORMAT(...,'N2','fr-FR')
         qui renvoie du texte avec separateur de milliers.
-     4. "Pas de commit intermediaire" : la proc ne fait qu'un SELECT ; le
+     4. PDV sans gerant en poste a la date du traitement (ex : uniquement une
+        affectation future) : REMONTE avec CodeGerant et DateDebAffectation
+        vides (LEFT JOIN) - valide par N. MANGANAS.
+     5. Date de reference = date LOCALE (heure de Paris) et non UTC, pour ne
+        pas remonter le gerant de la veille si le job tourne apres minuit
+        - valide par N. MANGANAS.
+     6. "Pas de commit intermediaire" : la proc ne fait qu'un SELECT ; le
         chargement full de la table S4 est fait par Talend dans UNE seule
         transaction (voir README.md du meme dossier).
 
@@ -32,11 +38,11 @@
                       NULL -> date du jour (heure locale du serveur).
 
    Exemple :
-     EXEC dbo.ps_S4_AffectationGerantCourant;
-     EXEC dbo.ps_S4_AffectationGerantCourant
+     EXEC dbo.usp_PULSE_ATTRIBUT_LOCAUX_ICARE_S4;
+     EXEC dbo.usp_PULSE_ATTRIBUT_LOCAUX_ICARE_S4
           @CreatedAtUtc = '2026-10-16T04:00:00', @DateReference = '2026-10-16';
    ============================================================================= */
-CREATE OR ALTER PROCEDURE dbo.ps_S4_AffectationGerantCourant
+CREATE OR ALTER PROCEDURE dbo.usp_PULSE_ATTRIBUT_LOCAUX_ICARE_S4
     @CreatedAtUtc  DATETIME2(0) = NULL,
     @DateReference DATE         = NULL
 AS
@@ -71,13 +77,15 @@ BEGIN
         ,ISNULL(a.comptables_quatuorFk_, '')                               AS CodeQuatuor
         ,ISNULL(a.fichePrincipale_datesGrp_dtMigrationPulse, '')           AS DateMigrationPulse
         ,ISNULL(gc.gerant_, '')                                            AS CodeGerant
-        ,ISNULL(gc.dateDebut, '')                                          AS DateDebAffectation
+        -- Conversion en texte yyyy-MM-dd : evite que '' devienne 1900-01-01
+        -- pour les PDV sans gerant (LEFT JOIN)
+        ,ISNULL(CONVERT(VARCHAR(10), gc.dateDebut, 23), '')                AS DateDebAffectation
         ,ISNULL(a.informationsCommerciales_presse_codeNim, '')             AS CodeNim
         ,@CreatedAtUtc                                                     AS CreatedAtUtc
     FROM EBX_TE_PDV_REF_PDV a
-    INNER JOIN GerantCourant gc
-            ON gc.pdv_ = a.fichePrincipale_code
-           AND gc.rn   = 1
+    LEFT JOIN GerantCourant gc
+           ON gc.pdv_ = a.fichePrincipale_code
+          AND gc.rn   = 1  -- dans le ON (et non le WHERE) pour garder les PDV sans gerant
     WHERE a.fichePrincipale_statut_ NOT IN (1, 6, 7);
 END
 GO

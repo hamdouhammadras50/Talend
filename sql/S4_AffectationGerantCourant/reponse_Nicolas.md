@@ -4,7 +4,7 @@
 
 Bonjour Nicolas,
 
-La procédure stockée `dbo.ps_S4_AffectationGerantCourant` est prête, à partir de ta requête. Elle reprend tes demandes :
+La procédure stockée `dbo.usp_PULSE_ATTRIBUT_LOCAUX_ICARE_S4` est prête, à partir de ta requête. Elle reprend tes demandes :
 
 - **Code gérant en poste** : j'ai remplacé le filtre `dateFin = '9999-12-31'` par la recherche de l'affectation active à la date du traitement (`dateDebut <= date du jour <= dateFin`). Les affectations futures sont donc ignorées. Avec ton exemple (PDV 1LAA, traitement le 16/10), on récupère bien le gérant 00000001. Le jour de la bascule (31/10/2026), les deux affectations se chevauchent : la procédure prend celle qui commence en dernier, donc le gérant 00000002.
 - **Surfaces** : les valeurs sont arrondies à 2 décimales (type `DECIMAL(18,2)`). Je n'ai pas utilisé `FORMAT(..., 'N2', 'fr-FR')`, qui renvoie du texte avec une virgule et un séparateur de milliers.
