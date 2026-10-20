@@ -27,7 +27,9 @@
      5. Date de reference = date LOCALE (heure de Paris) et non UTC, pour ne
         pas remonter le gerant de la veille si le job tourne apres minuit
         - valide par N. MANGANAS.
-     6. "Pas de commit intermediaire" : la proc ne fait qu'un SELECT ; le
+     6. CodeLicenceBoisson = code + '-' + libelle (EBX_TE_TYPE_LIC_BOISSON_PDV).
+        LEFT JOIN pour garder les PDV sans licence boisson (valeur vide).
+     7. "Pas de commit intermediaire" : la proc ne fait qu'un SELECT ; le
         chargement full de la table S4 est fait par Talend dans UNE seule
         transaction (voir README.md du meme dossier).
 
@@ -68,7 +70,9 @@ BEGIN
     SELECT
          a.fichePrincipale_code                                            AS CodePDV
         ,a.fichePrincipale_steRattachFk_                                   AS Societe
-        ,ISNULL(a.fichePrincipale_typeLicBoissFk_, '')                     AS CodeLicenceBoisson
+        -- Code + libelle de la licence boisson (ex : 'L4-Licence IV')
+        ,ISNULL(a.fichePrincipale_typeLicBoissFk_, '')
+         + ISNULL('-' + c.lblTypeLicBoisson, '')                           AS CodeLicenceBoisson
         ,CAST(ROUND(TRY_CAST(a.architecture_surfaceAttenante AS DECIMAL(19,4)), 2)
               AS DECIMAL(18,2))                                            AS SurfAttenante
         ,CAST(ROUND(TRY_CAST(a.architecture_surfaceAutre AS DECIMAL(19,4)), 2)
@@ -84,6 +88,8 @@ BEGIN
     LEFT JOIN GerantCourant gc
            ON gc.pdv_ = a.fichePrincipale_code
           AND gc.rn   = 1  -- dans le ON (et non le WHERE) pour garder les PDV sans gerant
+    LEFT JOIN EBX_TE_TYPE_LIC_BOISSON_PDV c
+           ON c.codeTypeLicBoisson = a.fichePrincipale_typeLicBoissFk_
     WHERE a.fichePrincipale_statut_ NOT IN (1, 6, 7);
 END
 GO
