@@ -2,6 +2,17 @@
 
 Reprise en Talend du script PowerShell `GetAgentEmail.ps1` : pour chaque agent Oracle (`REFERENTIEL.AGENT`), on cherche le compte Active Directory correspondant, puis on écrit le résultat dans `OracleAgentCompletedByAd.csv`.
 
+## Fichiers
+
+| Fichier | Rôle |
+|---|---|
+| `AGENT_EMAIL_AD_0.1.zip` | Job Talend `AGENT_EMAIL_AD` à importer (*Job Designs* → *Importer des éléments*) |
+| `src/build_talend_zip.py` | Régénère le zip : `python3 src/build_talend_zip.py .` |
+
+⚠️ Ce zip est généré par script, pas par Talend Studio. Certaines versions du Studio refusent ce type d'archive (« élément invalide »). Dans ce cas, monte le job à la main avec le guide ci-dessous : il décrit exactement la même configuration.
+
+Après l'import, renseigne les variables de contexte : mots de passe Oracle et AD, compte de service AD, dossier de sortie. Pour tester sur quelques agents, ajoute `+ " AND ag.i_agent IN (241653, 880022) "` à la fin de la requête du `tOracleInput_1`.
+
 ## Ce que fait le script (logique à reproduire)
 
 1. Il lit les agents : `I_AGENT, C_ETAT, L_ETAT, L_CIVILITE_NOM, L_EMAIL_AD, MAIL_DISPONIBLE, I_SOCIETE`.
