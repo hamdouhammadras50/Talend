@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Schema XSD du flux quotidien des commandes vers EDICOM (job Talend EDICOM_Commandes_XML).
+  Structure : Commandes / Commande (1..n) / Entete (1) + Lignes / Ligne (1..n).
+  Longueurs, types et obligations repris des tables sources :
+    APPRODIRECT.COMMANDE_ENVOI         -> balises de <Entete>
+    APPRODIRECT.ARTICLE_COMMANDE_ENVOI -> balises de <Ligne>
+  Une colonne nullable produit une balise vide (<X/>) : les types numeriques et dates l'acceptent.
+  Les VARCHAR2 sont en BYTE : la limite XSD (en caracteres) peut etre plus permissive pour les accents.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+
+  <xs:element name="Commandes">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="Commande" maxOccurs="unbounded">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Entete">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="CODE_CMDE" type="tNombre12_0"><xs:annotation><xs:documentation>COMMANDE_ENVOI.CODE_CMDE - NUMBER(12,0) - NOT NULL</xs:documentation></xs:annotation></xs:element>
+                    <xs:element name="CODE_PDV_FOURN" type="tTexte50"><xs:annotation><xs:documentation>COMMANDE_ENVOI.CODE_PDV_FOURN - VARCHAR2(50 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                    <xs:element name="I_PDV" type="tTexte50"><xs:annotation><xs:documentation>COMMANDE_ENVOI.I_PDV - VARCHAR2(50 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                    <xs:element name="NUMERO_CMDE" type="tTexte100"><xs:annotation><xs:documentation>COMMANDE_ENVOI.NUMERO_CMDE - VARCHAR2(100 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                    <xs:element name="TYPE_CMDE" type="tTexte6"><xs:annotation><xs:documentation>COMMANDE_ENVOI.TYPE_CMDE - VARCHAR2(6 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                    <xs:element name="DATE_LIVRAISON_CMDE" type="tDate_Vide"><xs:annotation><xs:documentation>COMMANDE_ENVOI.DATE_LIVRAISON_CMDE - DATE - nullable</xs:documentation></xs:annotation></xs:element>
+                    <xs:element name="CODE_ERP1_FOURN" type="tTexte100"><xs:annotation><xs:documentation>COMMANDE_ENVOI.CODE_ERP1_FOURN - VARCHAR2(100 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                    <xs:element name="ENVOYEE_CMDE" type="tNombre12_0_Vide"><xs:annotation><xs:documentation>COMMANDE_ENVOI.ENVOYEE_CMDE - NUMBER(12,0) - nullable</xs:documentation></xs:annotation></xs:element>
+                    <xs:element name="DATE_ENVOI_CMDE" type="tDateHeure_Vide"><xs:annotation><xs:documentation>COMMANDE_ENVOI.DATE_ENVOI_CMDE - DATE - nullable</xs:documentation></xs:annotation></xs:element>
+                    <xs:element name="EMAIL_CMDES_FOURN" type="tTexte100"><xs:annotation><xs:documentation>COMMANDE_ENVOI.EMAIL_CMDES_FOURN - VARCHAR2(100 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                    <xs:element name="LIBELLE_SITE" type="tTexte150"><xs:annotation><xs:documentation>COMMANDE_ENVOI.LIBELLE_SITE - VARCHAR2(150 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                    <xs:element name="ADRESSE_SITE" type="tTexte514"><xs:annotation><xs:documentation>COMMANDE_ENVOI.ADRESSE_SITE - VARCHAR2(514 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                    <xs:element name="TELEPHONE_SITE" type="tTexte20"><xs:annotation><xs:documentation>COMMANDE_ENVOI.TELEPHONE_SITE - VARCHAR2(20 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                    <xs:element name="ADRESSE_LIVRAISON" type="tTexte514"><xs:annotation><xs:documentation>COMMANDE_ENVOI.ADRESSE_LIVRAISON - VARCHAR2(514 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                    <xs:element name="NOM_UTILISATEUR" type="tTexte100"><xs:annotation><xs:documentation>COMMANDE_ENVOI.NOM_UTILISATEUR - VARCHAR2(100 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                    <xs:element name="PRENOM_UTILISATEUR" type="tTexte100"><xs:annotation><xs:documentation>COMMANDE_ENVOI.PRENOM_UTILISATEUR - VARCHAR2(100 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                    <xs:element name="CODE_FOURN" type="tNombre12_0_Vide"><xs:annotation><xs:documentation>COMMANDE_ENVOI.CODE_FOURN - NUMBER(12,0) - nullable</xs:documentation></xs:annotation></xs:element>
+                    <xs:element name="RAISON_SOCIALE_FOURN" type="tTexte300"><xs:annotation><xs:documentation>COMMANDE_ENVOI.RAISON_SOCIALE_FOURN - VARCHAR2(300 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                    <xs:element name="DATE_CMDE" type="tDate_Vide"><xs:annotation><xs:documentation>COMMANDE_ENVOI.DATE_CMDE - DATE - nullable</xs:documentation></xs:annotation></xs:element>
+                    <xs:element name="TOTAL_CMDE" type="tNombre19_5_Vide"><xs:annotation><xs:documentation>COMMANDE_ENVOI.TOTAL_CMDE - NUMBER(19,5) - nullable</xs:documentation></xs:annotation></xs:element>
+                    <xs:element name="I_GLN_PDV" type="tTexte13"><xs:annotation><xs:documentation>COMMANDE_ENVOI.I_GLN_PDV - VARCHAR2(13 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                    <xs:element name="I_GLN_DESTINATAIRE_DE_CMDE" type="tTexte13"><xs:annotation><xs:documentation>COMMANDE_ENVOI.I_GLN_DESTINATAIRE_DE_CMDE - VARCHAR2(13 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="Lignes">
+                <xs:complexType>
+                  <xs:sequence>
+                    <xs:element name="Ligne" maxOccurs="unbounded">
+                      <xs:complexType>
+                        <xs:sequence>
+                          <xs:element name="CODE_CMDE" type="tNombre12_0"><xs:annotation><xs:documentation>ARTICLE_COMMANDE_ENVOI.CODE_CMDE - NUMBER(12,0) - NOT NULL</xs:documentation></xs:annotation></xs:element>
+                          <xs:element name="CODE_ARTICLE_FOURN_CMDE" type="tTexte20"><xs:annotation><xs:documentation>ARTICLE_COMMANDE_ENVOI.CODE_ARTICLE_FOURN_CMDE - VARCHAR2(20 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                          <xs:element name="CODE_ERP1_ARTICLE" type="tTexte30"><xs:annotation><xs:documentation>ARTICLE_COMMANDE_ENVOI.CODE_ERP1_ARTICLE - VARCHAR2(30 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                          <xs:element name="QUANTITE_ARTICLE_CMDE" type="tNombre15_3_Vide"><xs:annotation><xs:documentation>ARTICLE_COMMANDE_ENVOI.QUANTITE_ARTICLE_CMDE - NUMBER(15,3) - nullable</xs:documentation></xs:annotation></xs:element>
+                          <xs:element name="TARIF_ARTICLE_CMDE" type="tNombre19_5_Vide"><xs:annotation><xs:documentation>ARTICLE_COMMANDE_ENVOI.TARIF_ARTICLE_CMDE - NUMBER(19,5) - nullable</xs:documentation></xs:annotation></xs:element>
+                          <xs:element name="CODE_ERP1_UNITE_CONSOMMATION" type="tTexte30"><xs:annotation><xs:documentation>ARTICLE_COMMANDE_ENVOI.CODE_ERP1_UNITE_CONSOMMATION - VARCHAR2(30 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                          <xs:element name="LIBELLE_FAMILLE" type="tTexte160"><xs:annotation><xs:documentation>ARTICLE_COMMANDE_ENVOI.LIBELLE_FAMILLE - VARCHAR2(160 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                          <xs:element name="LIBELLE_ARTICLE_CMDE" type="tTexte800"><xs:annotation><xs:documentation>ARTICLE_COMMANDE_ENVOI.LIBELLE_ARTICLE_CMDE - VARCHAR2(800 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                          <xs:element name="LIBELLE_UNITE_ACHAT" type="tTexte30"><xs:annotation><xs:documentation>ARTICLE_COMMANDE_ENVOI.LIBELLE_UNITE_ACHAT - VARCHAR2(30 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                          <xs:element name="TOTAL_ARTICLE_CMDE" type="tNombre19_5_Vide"><xs:annotation><xs:documentation>ARTICLE_COMMANDE_ENVOI.TOTAL_ARTICLE_CMDE - NUMBER(19,5) - nullable</xs:documentation></xs:annotation></xs:element>
+                          <xs:element name="CODE_ARTICLE" type="tNombre12_0_Vide"><xs:annotation><xs:documentation>ARTICLE_COMMANDE_ENVOI.CODE_ARTICLE - NUMBER(12,0) - nullable</xs:documentation></xs:annotation></xs:element>
+                          <xs:element name="PRIX_VENTE_ARTICLE_CMDE" type="tNombre15_5_Vide"><xs:annotation><xs:documentation>ARTICLE_COMMANDE_ENVOI.PRIX_VENTE_ARTICLE_CMDE - NUMBER(15,5) - nullable</xs:documentation></xs:annotation></xs:element>
+                          <xs:element name="PCB_ARTICLE_CMDE" type="tNombre12_0_Vide"><xs:annotation><xs:documentation>ARTICLE_COMMANDE_ENVOI.PCB_ARTICLE_CMDE - NUMBER(12,0) - nullable</xs:documentation></xs:annotation></xs:element>
+                          <xs:element name="I_LIGNE_CMDE" type="tNombre8_0"><xs:annotation><xs:documentation>ARTICLE_COMMANDE_ENVOI.I_LIGNE_CMDE - NUMBER(8,0) - NOT NULL</xs:documentation></xs:annotation></xs:element>
+                          <xs:element name="I_EAN" type="tTexte13"><xs:annotation><xs:documentation>ARTICLE_COMMANDE_ENVOI.I_EAN - VARCHAR2(13 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                          <xs:element name="N_MULTIPLE_COMMANDE" type="tNombre8_3"><xs:annotation><xs:documentation>ARTICLE_COMMANDE_ENVOI.N_MULTIPLE_COMMANDE - NUMBER(8,3) - NOT NULL</xs:documentation></xs:annotation></xs:element>
+                          <xs:element name="I_OPERATION" type="tNombre6_0_Vide"><xs:annotation><xs:documentation>ARTICLE_COMMANDE_ENVOI.I_OPERATION - NUMBER(6,0) - nullable</xs:documentation></xs:annotation></xs:element>
+                          <xs:element name="L_OPERATION" type="tTexte40"><xs:annotation><xs:documentation>ARTICLE_COMMANDE_ENVOI.L_OPERATION - VARCHAR2(40 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                        </xs:sequence>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+          <!-- Un numero de ligne n'apparait qu'une fois par commande -->
+          <xs:unique name="LigneUniqueParCommande">
+            <xs:selector xpath="Lignes/Ligne"/>
+            <xs:field xpath="I_LIGNE_CMDE"/>
+          </xs:unique>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+    <!-- Une commande n'apparait qu'une fois dans le fichier -->
+    <xs:unique name="CommandeUnique">
+      <xs:selector xpath="Commande/Entete"/>
+      <xs:field xpath="CODE_CMDE"/>
+    </xs:unique>
+  </xs:element>
+
+  <xs:simpleType name="tVide">
+    <xs:annotation><xs:documentation>Balise vide (valeur NULL en base).</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:length value="0"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="tTexte6">
+    <xs:annotation><xs:documentation>VARCHAR2(6 BYTE) : 6 caracteres maximum, valeur vide autorisee.</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="6"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="tTexte13">
+    <xs:annotation><xs:documentation>VARCHAR2(13 BYTE) : 13 caracteres maximum, valeur vide autorisee.</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="13"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="tTexte20">
+    <xs:annotation><xs:documentation>VARCHAR2(20 BYTE) : 20 caracteres maximum, valeur vide autorisee.</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="20"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="tTexte30">
+    <xs:annotation><xs:documentation>VARCHAR2(30 BYTE) : 30 caracteres maximum, valeur vide autorisee.</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="30"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="tTexte40">
+    <xs:annotation><xs:documentation>VARCHAR2(40 BYTE) : 40 caracteres maximum, valeur vide autorisee.</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="40"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="tTexte50">
+    <xs:annotation><xs:documentation>VARCHAR2(50 BYTE) : 50 caracteres maximum, valeur vide autorisee.</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="50"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="tTexte100">
+    <xs:annotation><xs:documentation>VARCHAR2(100 BYTE) : 100 caracteres maximum, valeur vide autorisee.</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="100"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="tTexte150">
+    <xs:annotation><xs:documentation>VARCHAR2(150 BYTE) : 150 caracteres maximum, valeur vide autorisee.</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="150"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="tTexte160">
+    <xs:annotation><xs:documentation>VARCHAR2(160 BYTE) : 160 caracteres maximum, valeur vide autorisee.</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="160"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="tTexte300">
+    <xs:annotation><xs:documentation>VARCHAR2(300 BYTE) : 300 caracteres maximum, valeur vide autorisee.</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="300"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="tTexte514">
+    <xs:annotation><xs:documentation>VARCHAR2(514 BYTE) : 514 caracteres maximum, valeur vide autorisee.</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="514"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="tTexte800">
+    <xs:annotation><xs:documentation>VARCHAR2(800 BYTE) : 800 caracteres maximum, valeur vide autorisee.</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="800"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="tNombre6_0">
+    <xs:annotation><xs:documentation>NUMBER(6,0) : 6 chiffres au total, dont 0 decimales.</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:integer">
+      <xs:totalDigits value="6"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="tNombre6_0_Vide">
+    <xs:annotation><xs:documentation>NUMBER(6,0) nullable : nombre ou balise vide.</xs:documentation></xs:annotation>
+    <xs:union memberTypes="tNombre6_0 tVide"/>
+  </xs:simpleType>
+  <xs:simpleType name="tNombre8_0">
+    <xs:annotation><xs:documentation>NUMBER(8,0) : 8 chiffres au total, dont 0 decimales.</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:integer">
+      <xs:totalDigits value="8"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="tNombre8_3">
+    <xs:annotation><xs:documentation>NUMBER(8,3) : 8 chiffres au total, dont 3 decimales.</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:decimal">
+      <xs:totalDigits value="8"/>
+      <xs:fractionDigits value="3"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="tNombre12_0">
+    <xs:annotation><xs:documentation>NUMBER(12,0) : 12 chiffres au total, dont 0 decimales.</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:integer">
+      <xs:totalDigits value="12"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="tNombre12_0_Vide">
+    <xs:annotation><xs:documentation>NUMBER(12,0) nullable : nombre ou balise vide.</xs:documentation></xs:annotation>
+    <xs:union memberTypes="tNombre12_0 tVide"/>
+  </xs:simpleType>
+  <xs:simpleType name="tNombre15_3">
+    <xs:annotation><xs:documentation>NUMBER(15,3) : 15 chiffres au total, dont 3 decimales.</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:decimal">
+      <xs:totalDigits value="15"/>
+      <xs:fractionDigits value="3"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="tNombre15_3_Vide">
+    <xs:annotation><xs:documentation>NUMBER(15,3) nullable : nombre ou balise vide.</xs:documentation></xs:annotation>
+    <xs:union memberTypes="tNombre15_3 tVide"/>
+  </xs:simpleType>
+  <xs:simpleType name="tNombre15_5">
+    <xs:annotation><xs:documentation>NUMBER(15,5) : 15 chiffres au total, dont 5 decimales.</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:decimal">
+      <xs:totalDigits value="15"/>
+      <xs:fractionDigits value="5"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="tNombre15_5_Vide">
+    <xs:annotation><xs:documentation>NUMBER(15,5) nullable : nombre ou balise vide.</xs:documentation></xs:annotation>
+    <xs:union memberTypes="tNombre15_5 tVide"/>
+  </xs:simpleType>
+  <xs:simpleType name="tNombre19_5">
+    <xs:annotation><xs:documentation>NUMBER(19,5) : 19 chiffres au total, dont 5 decimales.</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:decimal">
+      <xs:totalDigits value="19"/>
+      <xs:fractionDigits value="5"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="tNombre19_5_Vide">
+    <xs:annotation><xs:documentation>NUMBER(19,5) nullable : nombre ou balise vide.</xs:documentation></xs:annotation>
+    <xs:union memberTypes="tNombre19_5 tVide"/>
+  </xs:simpleType>
+  <xs:simpleType name="tDateHeure_Vide">
+    <xs:annotation><xs:documentation>DATE nullable avec heure, format AAAA-MM-JJ HH:MI:SS (to_char 'YYYY-MM-DD HH24:MI:SS'), ou balise vide.</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]) ([01]\d|2[0-3]):[0-5]\d:[0-5]\d)?"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="tDate_Vide">
+    <xs:annotation><xs:documentation>DATE nullable, format AAAA-MM-JJ (to_char 'YYYY-MM-DD'), ou balise vide.</xs:documentation></xs:annotation>
+    <xs:union memberTypes="xs:date tVide"/>
+  </xs:simpleType>
+
+</xs:schema>

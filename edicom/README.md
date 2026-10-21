@@ -7,6 +7,7 @@ Job Talend `EDICOM_Commandes_XML` : il extrait les commandes APPRODIRECT des fou
 | Fichier | Rôle |
 |---|---|
 | `EDICOM_Commandes_XML_0.1.zip` | **Archive à importer dans Talend Studio** |
+| `EDICOM_Commandes.xsd` | Schéma XSD du fichier : structure, types, longueurs et obligations repris des tables `COMMANDE_ENVOI` et `ARTICLE_COMMANDE_ENVOI` |
 | `exemple_EDICOM_COMMANDES.xml` | Exemple de fichier généré (données fictives), pour présenter le format à EDICOM |
 | `src/extraction_commandes.sql` | Requête d'extraction utilisée par le job |
 | `src/tJava_init.java`, `src/tJava_bilan.java` | Code des tJava (nom du fichier, bilan) |
@@ -86,3 +87,15 @@ Laisser `SFTP_ACTIVE = false`, lancer le job (Run) : le fichier XML est créé d
 2. **Doublons entre 07h30 et 10h00** : le filtre `date_envoi_cmde > sysdate - 1` (24 h glissantes) reprend à 10h00 les commandes déjà envoyées à 07h30. Il faudra peut-être un autre filtre, par exemple un flag d'envoi ou la date du dernier passage.
 3. **Format des dates** : ISO (`YYYY-MM-DD`, et `YYYY-MM-DD HH24:MI:SS` pour `DATE_ENVOI_CMDE`), modifiable dans la requête.
 4. **Colonnes des lignes** : la requête d'origine utilise `article_commande_envoi.*`. Les colonnes sont ici listées explicitement, d'après le modèle XML du mail ; `<CODE_CMDE>` est repris en tête de chaque `<Ligne>`.
+
+## Validation XSD
+
+`EDICOM_Commandes.xsd` décrit le fichier attendu :
+- **Structure** : `Commandes` / `Commande` (1..n) / `Entete` + `Lignes` / `Ligne` (1..n). L'ordre des balises est imposé.
+- **Textes** (`VARCHAR2(n)`) : `n` caractères maximum. Une valeur vide est autorisée.
+- **Nombres** (`NUMBER(p,s)`) : `p` chiffres au total, dont `s` décimales. Si la colonne est nullable, la balise vide est autorisée.
+- **Dates** : `AAAA-MM-JJ`, et `AAAA-MM-JJ HH:MI:SS` pour `DATE_ENVOI_CMDE`. La balise vide est autorisée.
+- **Obligatoires** (`NOT NULL`) : `CODE_CMDE` (en-tête et ligne), `I_LIGNE_CMDE` et `N_MULTIPLE_COMMANDE`.
+- **Unicité** : un `CODE_CMDE` par fichier, et un `I_LIGNE_CMDE` par commande.
+
+Pour valider un fichier dans Talend, utilise le composant **tXSDValidator** après le tAdvancedFileOutputXML. Hors Talend : `xmllint --noout --schema EDICOM_Commandes.xsd fichier.xml`.
