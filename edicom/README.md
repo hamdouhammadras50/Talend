@@ -47,7 +47,7 @@ Commandes                       (racine)
     │   └── I_GLN_DESTINATAIRE_DE_CMDE
     └── Lignes
         └── Ligne               ← élément de boucle ("Set As Loop Element")
-            ├── CODE_CMDE       ← colonne CODE_CMDE (même valeur que dans l'en-tête)
+            ├── CODE_CMDE_1     ← colonne CODE_CMDE (même valeur que dans l'en-tête ; Talend impose le suffixe _1)
             ├── CODE_ARTICLE_FOURN_CMDE
             ├── …               ← une balise par colonne de ligne (17)
             └── L_OPERATION
@@ -86,7 +86,7 @@ Laisser `SFTP_ACTIVE = false`, lancer le job (Run) : le fichier XML est créé d
 1. **Balise racine** : un fichier contient plusieurs commandes, elles sont donc englobées dans `<Commandes>` (modifiable dans l'arbre du tAdvancedFileOutputXML). Si EDICOM attend **un fichier par commande**, il faudra adapter le job.
 2. **Doublons entre 07h30 et 10h00** : le filtre `date_envoi_cmde > sysdate - 1` (24 h glissantes) reprend à 10h00 les commandes déjà envoyées à 07h30. Il faudra peut-être un autre filtre, par exemple un flag d'envoi ou la date du dernier passage.
 3. **Format des dates** : ISO (`YYYY-MM-DD`, et `YYYY-MM-DD HH24:MI:SS` pour `DATE_ENVOI_CMDE`), modifiable dans la requête.
-4. **Colonnes des lignes** : la requête d'origine utilise `article_commande_envoi.*`. Les colonnes sont ici listées explicitement, d'après le modèle XML du mail ; `<CODE_CMDE>` est repris en tête de chaque `<Ligne>`.
+4. **Colonnes des lignes** : la requête d'origine utilise `article_commande_envoi.*`. Les colonnes sont ici listées explicitement, d'après le modèle XML du mail ; le code commande est repris en tête de chaque `<Ligne>` sous la balise `<CODE_CMDE_1>`.
 
 ## Validation XSD
 
@@ -95,7 +95,7 @@ Laisser `SFTP_ACTIVE = false`, lancer le job (Run) : le fichier XML est créé d
 - **Textes** (`VARCHAR2(n)`) : `n` caractères maximum. Une valeur vide est autorisée.
 - **Nombres** (`NUMBER(p,s)`) : `p` chiffres au total, dont `s` décimales. Si la colonne est nullable, la balise vide est autorisée.
 - **Dates** : `AAAA-MM-JJ`, et `AAAA-MM-JJ HH:MI:SS` pour `DATE_ENVOI_CMDE`. La balise vide est autorisée.
-- **Obligatoires** (`NOT NULL`) : `CODE_CMDE` (en-tête et ligne), `I_LIGNE_CMDE` et `N_MULTIPLE_COMMANDE`.
+- **Obligatoires** (`NOT NULL`) : `CODE_CMDE` (en-tête), `CODE_CMDE_1` (ligne), `I_LIGNE_CMDE` et `N_MULTIPLE_COMMANDE`.
 - **Unicité** : un `CODE_CMDE` par fichier, et un `I_LIGNE_CMDE` par commande.
 
 Pour valider un fichier dans Talend, utilise le composant **tXSDValidator** après le tAdvancedFileOutputXML. Hors Talend : `xmllint --noout --schema EDICOM_Commandes.xsd fichier.xml`.

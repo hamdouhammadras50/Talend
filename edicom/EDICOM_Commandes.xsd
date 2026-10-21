@@ -2,6 +2,7 @@
 <!--
   Schema XSD du flux quotidien des commandes vers EDICOM (job Talend EDICOM_Commandes_XML).
   Structure : Commandes / Commande (1..n) / Entete (1) + Lignes / Ligne (1..n).
+  Dans <Ligne>, le code commande est porte par la balise CODE_CMDE_1.
   Longueurs, types et obligations repris des tables sources :
     APPRODIRECT.COMMANDE_ENVOI         -> balises de <Entete>
     APPRODIRECT.ARTICLE_COMMANDE_ENVOI -> balises de <Ligne>
@@ -50,7 +51,7 @@
                     <xs:element name="Ligne" maxOccurs="unbounded">
                       <xs:complexType>
                         <xs:sequence>
-                          <xs:element name="CODE_CMDE" type="tNombre12_0"><xs:annotation><xs:documentation>ARTICLE_COMMANDE_ENVOI.CODE_CMDE - NUMBER(12,0) - NOT NULL</xs:documentation></xs:annotation></xs:element>
+                          <xs:element name="CODE_CMDE_1" type="tNombre12_0"><xs:annotation><xs:documentation>ARTICLE_COMMANDE_ENVOI.CODE_CMDE - NUMBER(12,0) - NOT NULL (balise nommee CODE_CMDE_1 par Talend, CODE_CMDE existant deja dans Entete)</xs:documentation></xs:annotation></xs:element>
                           <xs:element name="CODE_ARTICLE_FOURN_CMDE" type="tTexte20"><xs:annotation><xs:documentation>ARTICLE_COMMANDE_ENVOI.CODE_ARTICLE_FOURN_CMDE - VARCHAR2(20 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
                           <xs:element name="CODE_ERP1_ARTICLE" type="tTexte30"><xs:annotation><xs:documentation>ARTICLE_COMMANDE_ENVOI.CODE_ERP1_ARTICLE - VARCHAR2(30 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
                           <xs:element name="QUANTITE_ARTICLE_CMDE" type="tNombre15_3_Vide"><xs:annotation><xs:documentation>ARTICLE_COMMANDE_ENVOI.QUANTITE_ARTICLE_CMDE - NUMBER(15,3) - nullable</xs:documentation></xs:annotation></xs:element>

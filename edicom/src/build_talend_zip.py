@@ -150,8 +150,8 @@ def xml_tree_tables():
     group += [row(f"{cmde}/Entete/{c}", c) for c in HEADER_COLS]
     group.append(row(cmde + "/Lignes", main=True))
     ligne = cmde + "/Lignes/Ligne"
-    # CODE_CMDE est repris dans chaque <Ligne> (meme colonne que l'en-tete, valeur identique par jointure)
-    loop = [row(ligne, main=True), row(f"{ligne}/CODE_CMDE", "CODE_CMDE")]
+    # Code commande repris dans chaque <Ligne> sous la balise CODE_CMDE_1 (Talend refuse deux balises CODE_CMDE)
+    loop = [row(ligne, main=True), row(f"{ligne}/CODE_CMDE_1", "CODE_CMDE")]
     loop += [row(f"{ligne}/{c}", c) for c in LINE_COLS]
     return root, group, loop
 
