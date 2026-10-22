@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
 """Genere l'archive d'import Talend (Import Items) du job AGENT_EMAIL_AD,
-reprise de GetAgentEmail.ps1 : gerants en poste (ref_pdv EBX, SQL Server) completes par Active Directory.
-Plus aucune lecture ni mise a jour Oracle.
+reprise de GetAgentEmail.ps1 : liste matricule + mail, uniquement depuis Active Directory
+(aucune source externe : ni Oracle, ni SQL Server).
 
 Usage : python3 build_talend_zip.py <dossier_sortie>
 
-  tPrejob -> tMSSqlConnection_1 (base EBX ref_pdv)
-  tLDAPInput_1 (domaine) -> tMap_1 -> tHashOutput_1      (dictionnaire AD)
+  tLDAPInput_1 (domaine) -> tMap_1 -> tHashOutput_1          (comptes AD)
      | OnSubjobOk
-  tLDAPInput_2 (OU SharedMailbox) -> tHashOutput_2        (boites partagees ETEP)
+  tLDAPInput_2 (OU SharedMailbox) -> tMap_3 -> tHashOutput_2  (boites ETEP, cle = sAMAccountName sans _ETEP)
      | OnSubjobOk
-  tMSSqlInput_1 (gerants) --row1--> tMap_2 --out--> tFileOutputDelimited_1 (CSV)
-       lookups : tHashInput_1 (etep), tHashInput_2 (adId), tHashInput_3 (adSam)
-  tPostjob -> tMSSqlClose_1
+  tHashInput_1 (comptes) --ad--> tMap_2 --out--> tFileOutputDelimited_1 (CSV MATRICULE;MAIL)
+       lookup : tHashInput_2 (etep, sur SAM_UPPER)
 """
 import os
 import sys
@@ -26,20 +24,12 @@ JOB = "AGENT_EMAIL_AD"
 VERSION = "0.1"
 FOLDER = "AGENT"
 
-AGENT_COLS = ["I_AGENT", "I_SOCIETE"]
 AD_COLS = ["dn", "employeeID", "sAMAccountName", "userPrincipalName", "userAccountControl", "description", "mail"]
 ETEP_COLS = ["employeeID", "sAMAccountName"]
 AD_HASH_COLS = AD_COLS + ["SAM_UPPER"]
-OUT_COLS = ["I_agent", "i_societe",
-            "AdStatus", "AdEmployeeID", "AduserPrincipalName", "AduserAccountControl", "AdPath",
-            "AdDescription", "AdMail", "Admail_disponible"]
+ETEP_HASH_COLS = ETEP_COLS + ["SAM_LTRF_UPPER"]
+OUT_COLS = ["MATRICULE", "MAIL"]
 CONTEXT = [
-    ("DB_HOST", "id_String", "", "Serveur SQL Server de la base EBX (ref_pdv)"),
-    ("DB_PORT", "id_String", "1433", "Port SQL Server"),
-    ("DB_NAME", "id_String", "EBX_MW", "Base contenant EBX_TR_PDV_GERANT_REF_PDV et EBX_TE_PDV_REF_PDV"),
-    ("DB_SCHEMA", "id_String", "dbo", "Schema des tables EBX"),
-    ("DB_USER", "id_String", "", "Utilisateur SQL Server"),
-    ("DB_PASSWORD", "id_Password", "", "Mot de passe SQL Server"),
     ("LDAP_HOST", "id_String", "ltrf.fr", "Serveur Active Directory (domaine ou controleur)"),
     ("LDAP_PORT", "id_Integer", "389", "Port LDAP (636 en LDAPS)"),
     ("LDAP_USER", "id_String", "compte_service@ltrf.fr", "Compte de service AD (lecture)"),
@@ -50,7 +40,6 @@ CONTEXT = [
     ("OUTPUT_DIR", "id_Directory", "C:/Talend/AGENT", "Dossier du CSV"),
 ]
 
-EMP8 = "String.format(\"%8s\", row1.I_AGENT).replace(' ', '0')"
 
 
 def tid():
@@ -146,37 +135,30 @@ def tmap_ad():
     return mapper([in_table("ad", AD_COLS)], [out_table("adDico", exprs)])
 
 
-def tmap_agents():
-    def ad(col):
-        return f"!Var.trouve ? null : (Var.etep ? adSam.{col} : adId.{col})"
-    out = [
-        ("I_agent", "row1.I_AGENT"), ("i_societe", "row1.I_SOCIETE"),
-        ("AdStatus", 'Var.trouve ? "Found by EmployeID" : null'),
-        ("AdEmployeeID", ad("employeeID")),
-        ("AduserPrincipalName", ad("userPrincipalName")),
-        ("AduserAccountControl", "Var.uac"),
-        ("AdPath", '!Var.trouve ? null : "LDAP://" + (Var.etep ? adSam.dn : adId.dn)'),
-        ("AdDescription", ad("description")),
-        ("AdMail", "Var.mail"),
-        ("Admail_disponible", "Var.dispo"),
-    ]
+def tmap_etep():
+    exprs = [(c, f"etep.{c}") for c in ETEP_COLS]
+    exprs.append(("SAM_LTRF_UPPER", 'etep.sAMAccountName == null ? null : '
+                                    'etep.sAMAccountName.replaceAll("(?i)_ETEP", "").toUpperCase()'))
+    return mapper([in_table("etep", ETEP_COLS)], [out_table("etepDico", exprs)])
+
+
+def tmap_resultat():
     vars_ = [
-        ("etep", '"16".equals(row1.I_SOCIETE)', "id_Boolean"),
-        ("trouve", "Var.etep ? adSam.SAM_UPPER != null : adId.employeeID != null", "id_Boolean"),
-        ("uac", "!Var.trouve ? null : (Var.etep ? adSam.userAccountControl : adId.userAccountControl)", "id_String"),
-        ("mail", '!Var.trouve ? "" : (Var.etep ? adSam.mail : adId.mail)', "id_String"),
-        ("dispo", '(!Var.trouve || Var.uac == null) ? "" : ((Integer.parseInt(Var.uac.trim()) & 2) == 2 ? "N" : "O")',
-         "id_String"),
+        # Matricule porte par le compte lui-meme, sinon par sa boite partagee _ETEP (societe 16)
+        ("matricule", '(adCpt.employeeID != null && !adCpt.employeeID.trim().isEmpty()) ? adCpt.employeeID.trim() : '
+                      '(etepLk.employeeID == null ? "" : etepLk.employeeID.trim())', "id_String"),
+        ("mail", 'adCpt.mail == null ? "" : adCpt.mail.trim()', "id_String"),
+        # Compte actif : bit 2 (ACCOUNTDISABLE) de userAccountControl absent
+        ("actif", 'adCpt.userAccountControl != null && (Integer.parseInt(adCpt.userAccountControl.trim()) & 2) == 0',
+         "id_Boolean"),
     ]
+    out = [("MATRICULE", "Var.matricule"), ("MAIL", "Var.mail")]
     inputs = [
-        in_table("row1", AGENT_COLS),
-        in_table("etep", ETEP_COLS, {"employeeID": f'"16".equals(row1.I_SOCIETE) ? {EMP8} : ""'}, "FIRST_MATCH"),
-        in_table("adId", AD_HASH_COLS, {"employeeID": f'"16".equals(row1.I_SOCIETE) ? "" : {EMP8}'}, "FIRST_MATCH"),
-        in_table("adSam", AD_HASH_COLS, {"SAM_UPPER": 'etep.sAMAccountName == null ? "" : '
-                                                      'etep.sAMAccountName.replaceAll("(?i)_ETEP", "").toUpperCase()'},
-                 "FIRST_MATCH"),
+        in_table("adCpt", AD_HASH_COLS),
+        in_table("etepLk", ETEP_HASH_COLS, {"SAM_LTRF_UPPER": "adCpt.SAM_UPPER"}, "FIRST_MATCH"),
     ]
-    return mapper(inputs, [out_table("out", out)], vars_)
+    filt = "!Var.matricule.isEmpty() && !Var.mail.isEmpty() && Var.actif"
+    return mapper(inputs, [out_table("out", out, filt)], vars_)
 
 
 def ldap(unique, x, y, basedn, filt, cols):
@@ -222,48 +204,24 @@ def build_item():
     ctx = "\n".join(
         f'    <contextParameter comment={quoteattr(c)} name="{n}" prompt="{n}?" promptNeeded="false" '
         f'repositoryContextId="" type="{t}" value={quoteattr(v)}/>' for n, t, v, c in CONTEXT)
-    # Gerants en poste aujourd'hui sur un PDV actif (meme regle que usp_PULSE_ATTRIBUT_LOCAUX_ICARE_S4)
-    query = ('"SELECT DISTINCT " +\n'
-             '"       CAST(g.gerant_ AS VARCHAR(20))                       AS I_AGENT, " +\n'
-             '"       CAST(p.fichePrincipale_steRattachFk_ AS VARCHAR(20)) AS I_SOCIETE " +\n'
-             '"  FROM EBX_TR_PDV_GERANT_REF_PDV g " +\n'
-             '" INNER JOIN EBX_TE_PDV_REF_PDV p ON p.fichePrincipale_code = g.pdv_ " +\n'
-             '" WHERE g.gerant_ IS NOT NULL " +\n'
-             '"   AND g.dateDebut <= CAST(GETDATE() AS DATE) " +\n'
-             '"   AND ISNULL(g.dateFin, \'9999-12-31\') >= CAST(GETDATE() AS DATE) " +\n'
-             '"   AND p.fichePrincipale_statut_ NOT IN (1, 6, 7) "')
     nodes = [
-        node("tPrejob", "0.102", "tPrejob_1", 64, 32, []),
-        node("tMSSqlConnection", "0.102", "tMSSqlConnection_1", 288, 32, [
-            p("DRIVER", "MSSQL_PROP", "CLOSED_LIST"),
-            p("HOST", "context.DB_HOST"), p("PORT", "context.DB_PORT"),
-            p("DBNAME", "context.DB_NAME"), p("SCHEMA_DB", "context.DB_SCHEMA"),
-            p("USER", "context.DB_USER"), p("PASS", "context.DB_PASSWORD", "PASSWORD"),
-        ]),
-        ldap("tLDAPInput_1", 64, 160, "context.LDAP_BASEDN",
+        ldap("tLDAPInput_1", 64, 64, "context.LDAP_BASEDN",
              '"(|(employeeID=*)(&(objectCategory=person)(objectClass=user)))"', AD_COLS),
-        node("tMap", "2.1", "tMap_1", 288, 160, [p("DIE_ON_ERROR", "true", "CHECK")],
+        node("tMap", "2.1", "tMap_1", 288, 64, [p("DIE_ON_ERROR", "true", "CHECK")],
              metadata("adDico", AD_HASH_COLS) + "\n" + tmap_ad()),
-        hash_out("tHashOutput_1", 512, 160, AD_HASH_COLS),
-        ldap("tLDAPInput_2", 64, 288, "context.LDAP_BASEDN_ETEP", '"(employeeID=*)"', ETEP_COLS),
-        hash_out("tHashOutput_2", 512, 288, ETEP_COLS),
-        node("tMSSqlInput", "0.102", "tMSSqlInput_1", 64, 448, [
-            p("USE_EXISTING_CONNECTION", "true", "CHECK"),
-            p("CONNECTION", "tMSSqlConnection_1", "COMPONENT_LIST"),
-            p("TABLE", '"EBX_TR_PDV_GERANT_REF_PDV"', "DBTABLE"),
-            p("QUERYSTORE:QUERYSTORE_TYPE", "BUILT_IN", "TECHNICAL"),
-            p("QUERY", query, "MEMO_SQL"),
-            p("TRIM_ALL_COLUMN", "true", "CHECK"),
-        ], metadata("tMSSqlInput_1", AGENT_COLS)),
-        hash_in("tHashInput_1", 160, 576, "tHashOutput_2", ETEP_COLS),
-        hash_in("tHashInput_2", 288, 608, "tHashOutput_1", AD_HASH_COLS),
-        hash_in("tHashInput_3", 416, 576, "tHashOutput_1", AD_HASH_COLS),
-        node("tMap", "2.1", "tMap_2", 288, 448, [p("DIE_ON_ERROR", "true", "CHECK")],
-             metadata("out", OUT_COLS) + "\n" + tmap_agents()),
-        node("tFileOutputDelimited", "0.101", "tFileOutputDelimited_1", 544, 416, [
-            p("FILENAME", 'context.OUTPUT_DIR + "/GerantCompletedByAd.csv"', "FILE"),
+        hash_out("tHashOutput_1", 512, 64, AD_HASH_COLS),
+        ldap("tLDAPInput_2", 64, 192, "context.LDAP_BASEDN_ETEP", '"(employeeID=*)"', ETEP_COLS),
+        node("tMap", "2.1", "tMap_3", 288, 192, [p("DIE_ON_ERROR", "true", "CHECK")],
+             metadata("etepDico", ETEP_HASH_COLS) + "\n" + tmap_etep()),
+        hash_out("tHashOutput_2", 512, 192, ETEP_HASH_COLS),
+        hash_in("tHashInput_1", 64, 352, "tHashOutput_1", AD_HASH_COLS),
+        hash_in("tHashInput_2", 288, 480, "tHashOutput_2", ETEP_HASH_COLS),
+        node("tMap", "2.1", "tMap_2", 288, 352, [p("DIE_ON_ERROR", "true", "CHECK")],
+             metadata("out", OUT_COLS) + "\n" + tmap_resultat()),
+        node("tFileOutputDelimited", "0.101", "tFileOutputDelimited_1", 544, 352, [
+            p("FILENAME", 'context.OUTPUT_DIR + "/MatriculeMailAd.csv"', "FILE"),
             p("ROWSEPARATOR", '"\\n"'),
-            p("FIELDSEPARATOR", '","'),
+            p("FIELDSEPARATOR", '";"'),
             p("APPEND", "false", "CHECK"),
             p("INCLUDEHEADER", "true", "CHECK"),
             p("CSV_OPTION", "true", "CHECK"),
@@ -273,29 +231,20 @@ def build_item():
             p("ENCODING", '"UTF-8"', "ENCODING_TYPE"),
             p("ENCODING:ENCODING_TYPE", "UTF-8", "TECHNICAL"),
         ], metadata("tFileOutputDelimited_1", OUT_COLS)),
-        node("tPostjob", "0.102", "tPostjob_1", 64, 784, []),
-        node("tMSSqlClose", "0.102", "tMSSqlClose_1", 288, 784, [
-            p("CONNECTION", "tMSSqlConnection_1", "COMPONENT_LIST"),
-        ]),
     ]
     # lineStyle = id EConnectionType : FLOW_MAIN=0, ON_SUBJOB_OK=1, ON_COMPONENT_OK=3, FLOW_REF(lookup)=8
     connections = [
-        connection("COMPONENT_OK", "OnComponentOk", 3, "tPrejob_1", "tMSSqlConnection_1", "OnComponentOk1"),
         connection("FLOW", "ad", 0, "tLDAPInput_1", "tMap_1", "ad"),
         connection("FLOW", "adDico", 0, "tMap_1", "tHashOutput_1", "adDico", metaname="adDico"),
         connection("SUBJOB_OK", "OnSubjobOk", 1, "tLDAPInput_1", "tLDAPInput_2", "OnSubjobOk1"),
-        connection("FLOW", "etepDico", 0, "tLDAPInput_2", "tHashOutput_2", "etepDico"),
-        connection("SUBJOB_OK", "OnSubjobOk", 1, "tLDAPInput_2", "tMSSqlInput_1", "OnSubjobOk2"),
-        connection("FLOW", "row1", 0, "tMSSqlInput_1", "tMap_2", "row1"),
-        connection("FLOW", "etep", 8, "tHashInput_1", "tMap_2", "etep"),
-        connection("FLOW", "adId", 8, "tHashInput_2", "tMap_2", "adId"),
-        connection("FLOW", "adSam", 8, "tHashInput_3", "tMap_2", "adSam"),
+        connection("FLOW", "etep", 0, "tLDAPInput_2", "tMap_3", "etep"),
+        connection("FLOW", "etepDico", 0, "tMap_3", "tHashOutput_2", "etepDico", metaname="etepDico"),
+        connection("SUBJOB_OK", "OnSubjobOk", 1, "tLDAPInput_2", "tHashInput_1", "OnSubjobOk2"),
+        connection("FLOW", "adCpt", 0, "tHashInput_1", "tMap_2", "adCpt"),
+        connection("FLOW", "etepLk", 8, "tHashInput_2", "tMap_2", "etepLk"),
         connection("FLOW", "out", 0, "tMap_2", "tFileOutputDelimited_1", "out", metaname="out"),
-        connection("COMPONENT_OK", "OnComponentOk", 3, "tPostjob_1", "tMSSqlClose_1", "OnComponentOk2"),
     ]
-    subjobs = [subjob("tPrejob_1", "230;100;0", "255;220;180"), subjob("tMSSqlConnection_1", "230;100;0", "255;220;180"),
-               subjob("tLDAPInput_1"), subjob("tLDAPInput_2"), subjob("tMSSqlInput_1"),
-               subjob("tPostjob_1", "230;100;0", "255;220;180"), subjob("tMSSqlClose_1", "230;100;0", "255;220;180")]
+    subjobs = [subjob("tLDAPInput_1"), subjob("tLDAPInput_2"), subjob("tHashInput_1")]
     return ('<?xml version="1.0" encoding="UTF-8"?>\n'
             '<talendfile:ProcessType xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" '
             'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" '
@@ -312,7 +261,7 @@ def build_item():
 def build_properties(now, item_id, prop_id, state_id, author_id):
     return f'''<?xml version="1.0" encoding="UTF-8"?>
 <xmi:XMI xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:TalendProperties="http://www.talend.org/properties">
-  <TalendProperties:Property xmi:id="{prop_id}" id="{tid()}" label="{JOB}" purpose="Reprise de GetAgentEmail.ps1" description="Gerants en poste (ref_pdv EBX, SQL Server) completes par Active Directory (employeeID, ETEP via SharedMailbox), export CSV GerantCompletedByAd.csv. Sans Oracle." creationDate="{now}" modificationDate="{now}" version="{VERSION}" statusCode="" item="{item_id}" displayName="{JOB}">
+  <TalendProperties:Property xmi:id="{prop_id}" id="{tid()}" label="{JOB}" purpose="Reprise de GetAgentEmail.ps1" description="Matricule + mail depuis Active Directory uniquement (employeeID, ETEP via SharedMailbox), export CSV MatriculeMailAd.csv. Sans Oracle ni SQL Server." creationDate="{now}" modificationDate="{now}" version="{VERSION}" statusCode="" item="{item_id}" displayName="{JOB}">
     <author href="../../talend.project#{author_id}"/>
   </TalendProperties:Property>
   <TalendProperties:ItemState xmi:id="{state_id}" path="{FOLDER}"/>
