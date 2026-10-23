@@ -22,7 +22,7 @@ MATRICULE;MAIL
 
 1. **Matricule** = attribut AD `employeeID` (8 caractères, complété par des zéros, ex. `00241653`).
 2. **Cas ETEP (ancienne société 16)** : le compte LTRF de l'agent n'a pas d'`employeeID`. Le matricule est porté par une **boîte partagée** `xxx_ETEP` dans l'OU `SharedMailbox`. On relie la boîte au compte en retirant `_ETEP` du `sAMAccountName` (`jdupont_ETEP` → `jdupont`), puis on prend le mail du compte `jdupont`.
-3. Si un compte a son propre `employeeID` **et** une boîte `_ETEP`, c'est son propre `employeeID` qui est gardé.
+3. Si un compte a une boîte `_ETEP`, c'est le **matricule ETEP** qui est gardé, avec le **mail du compte LTRF**. Sinon, c'est l'`employeeID` du compte.
 4. Ne sortent que les comptes **actifs** (bit 2 de `userAccountControl` absent) qui ont un **matricule** et un **mail** non vides.
 
 ## Principe du job
@@ -74,7 +74,7 @@ Variables :
 
 | Variable | Type | Expression |
 |---|---|---|
-| `matricule` | String | `(adCpt.employeeID != null && !adCpt.employeeID.trim().isEmpty()) ? adCpt.employeeID.trim() : (etepLk.employeeID == null ? "" : etepLk.employeeID.trim())` |
+| `matricule` | String | `(etepLk.employeeID != null && !etepLk.employeeID.trim().isEmpty()) ? etepLk.employeeID.trim() : (adCpt.employeeID == null ? "" : adCpt.employeeID.trim())` |
 | `mail` | String | `adCpt.mail == null ? "" : adCpt.mail.trim()` |
 | `actif` | boolean | `adCpt.userAccountControl != null && (Integer.parseInt(adCpt.userAccountControl.trim()) & 2) == 0` |
 

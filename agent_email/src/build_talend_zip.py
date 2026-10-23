@@ -144,9 +144,9 @@ def tmap_etep():
 
 def tmap_resultat():
     vars_ = [
-        # Matricule porte par le compte lui-meme, sinon par sa boite partagee _ETEP (societe 16)
-        ("matricule", '(adCpt.employeeID != null && !adCpt.employeeID.trim().isEmpty()) ? adCpt.employeeID.trim() : '
-                      '(etepLk.employeeID == null ? "" : etepLk.employeeID.trim())', "id_String"),
+        # Matricule ETEP (boite partagee _ETEP) en priorite, sinon celui du compte LTRF ; le mail reste celui du compte LTRF
+        ("matricule", '(etepLk.employeeID != null && !etepLk.employeeID.trim().isEmpty()) ? etepLk.employeeID.trim() : '
+                      '(adCpt.employeeID == null ? "" : adCpt.employeeID.trim())', "id_String"),
         ("mail", 'adCpt.mail == null ? "" : adCpt.mail.trim()', "id_String"),
         # Compte actif : bit 2 (ACCOUNTDISABLE) de userAccountControl absent
         ("actif", 'adCpt.userAccountControl != null && (Integer.parseInt(adCpt.userAccountControl.trim()) & 2) == 0',
