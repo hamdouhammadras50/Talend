@@ -92,7 +92,7 @@ Laisser `SFTP_ACTIVE = false`, lancer le job (Run) : le fichier XML est créé d
 
 `EDICOM_Commandes.xsd` décrit le fichier attendu :
 - **Structure** : `Commandes` / `Commande` (1..n) / `Entete` + `Lignes` / `Ligne` (1..n). Toutes les balises sont présentes, dans l'ordre imposé.
-- **Descriptions et obligations** : reprises du **tableau des champs EDICOM** (colonne « obligatoire »). Chaque balise porte sa description, son caractère obligatoire et sa colonne source.
+- **Descriptions et obligations** : reprises du **tableau des champs EDICOM** (colonne « obligatoire »). Quand la description indique « Not required », le champ est facultatif, même s'il est coché. Chaque balise porte sa description, son caractère obligatoire et sa colonne source.
   - **Obligatoire** : la balise doit contenir une valeur, une balise vide est refusée.
   - **Facultatif** : la balise peut être vide (`<X/>`).
 - **Textes** (`VARCHAR2(n)`) : `n` caractères maximum. **Nombres** (`NUMBER(p,s)`) : `p` chiffres au total, dont `s` décimales. **Dates** : `AAAA-MM-JJ`, et `AAAA-MM-JJ HH:MI:SS` pour `DATE_ENVOI_CMDE`.
@@ -100,9 +100,9 @@ Laisser `SFTP_ACTIVE = false`, lancer le job (Run) : le fichier XML est créé d
 
 | Bloc | Obligatoires | Facultatifs |
 |---|---|---|
-| `<Entete>` | `CODE_CMDE`, `CODE_PDV_FOURN`, `I_PDV`, `NUMERO_CMDE`, `TYPE_CMDE`, `DATE_LIVRAISON_CMDE`, `CODE_ERP1_FOURN`, `ENVOYEE_CMDE`, `LIBELLE_SITE`, `NOM_UTILISATEUR`, `PRENOM_UTILISATEUR`, `CODE_FOURN`, `RAISON_SOCIALE_FOURN`, `DATE_CMDE`, `I_GLN_PDV`, `I_GLN_DESTINATAIRE_DE_CMDE` | `DATE_ENVOI_CMDE`, `EMAIL_CMDES_FOURN`, `ADRESSE_SITE`, `TELEPHONE_SITE`, `ADRESSE_LIVRAISON`, `TOTAL_CMDE` |
-| `<Ligne>` | `CODE_CMDE_1`, `CODE_ERP1_ARTICLE`, `QUANTITE_ARTICLE_CMDE`, `TARIF_ARTICLE_CMDE`, `CODE_ERP1_UNITE_CONSOMMATION`, `LIBELLE_FAMILLE`, `LIBELLE_ARTICLE_CMDE`, `LIBELLE_UNITE_ACHAT`, `CODE_ARTICLE`, `PCB_ARTICLE_CMDE`, `I_LIGNE_CMDE`, `N_MULTIPLE_COMMANDE` | `CODE_ARTICLE_FOURN_CMDE`, `I_EAN` (voir ci-dessous), `TOTAL_ARTICLE_CMDE`, `PRIX_VENTE_ARTICLE_CMDE`, `I_OPERATION`, `L_OPERATION` |
+| `<Entete>` | `CODE_CMDE`, `CODE_PDV_FOURN`, `NUMERO_CMDE`, `TYPE_CMDE`, `DATE_LIVRAISON_CMDE`, `ENVOYEE_CMDE`, `LIBELLE_SITE`, `NOM_UTILISATEUR`, `PRENOM_UTILISATEUR`, `CODE_FOURN`, `RAISON_SOCIALE_FOURN`, `DATE_CMDE`, `I_GLN_PDV`, `I_GLN_DESTINATAIRE_DE_CMDE` | `I_PDV`, `CODE_ERP1_FOURN`, `DATE_ENVOI_CMDE`, `EMAIL_CMDES_FOURN`, `ADRESSE_SITE`, `TELEPHONE_SITE`, `ADRESSE_LIVRAISON`, `TOTAL_CMDE` |
+| `<Ligne>` | `CODE_CMDE_1`, `CODE_ARTICLE_FOURN_CMDE`, `CODE_ERP1_ARTICLE`, `QUANTITE_ARTICLE_CMDE`, `TARIF_ARTICLE_CMDE`, `CODE_ERP1_UNITE_CONSOMMATION`, `LIBELLE_ARTICLE_CMDE`, `LIBELLE_UNITE_ACHAT`, `CODE_ARTICLE`, `PCB_ARTICLE_CMDE`, `I_LIGNE_CMDE`, `N_MULTIPLE_COMMANDE` | `LIBELLE_FAMILLE`, `I_EAN`, `TOTAL_ARTICLE_CMDE`, `PRIX_VENTE_ARTICLE_CMDE`, `I_OPERATION`, `L_OPERATION` |
 
-**Règle « I_EAN ou CODE_ARTICLE_FOURN_CMDE »** : EDICOM demande qu'au moins l'un des deux soit renseigné dans chaque ligne. Le XSD 1.0 ne sait pas exprimer cette condition : les deux balises y sont facultatives, et la règle est à garantir dans la requête d'extraction.
+**Règle « I_EAN ou CODE_ARTICLE_FOURN_CMDE »** : `CODE_ARTICLE_FOURN_CMDE` étant obligatoire (coché dans le tableau), la règle est toujours respectée ; `I_EAN` reste facultatif.
 
 Pour valider un fichier dans Talend, utilise le composant **tXSDValidator** après le tAdvancedFileOutputXML. Hors Talend : `xmllint --noout --schema EDICOM_Commandes.xsd fichier.xml`.

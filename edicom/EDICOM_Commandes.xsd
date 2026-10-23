@@ -5,13 +5,14 @@
   Toutes les balises sont toujours presentes, dans l'ordre impose.
 
   Descriptions et obligations : tableau des champs fourni par EDICOM (colonne "obligatoire").
+  Quand la description indique "Not required", le champ est facultatif, meme s'il est coche.
     - Champ obligatoire : la balise doit contenir une valeur (balise vide refusee).
     - Champ facultatif  : la balise peut etre vide (<X/>), valeur NULL en base.
   Types et longueurs : repris des tables sources APPRODIRECT.COMMANDE_ENVOI (Entete)
   et APPRODIRECT.ARTICLE_COMMANDE_ENVOI (Ligne).
 
-  Regle non exprimable en XSD 1.0 (a garantir par la requete d'extraction) :
-    dans chaque <Ligne>, I_EAN ou CODE_ARTICLE_FOURN_CMDE doit etre renseigne.
+  Dans <Ligne>, CODE_ARTICLE_FOURN_CMDE est obligatoire (coche du tableau) : la regle EDICOM
+  "I_EAN ou CODE_ARTICLE_FOURN_CMDE" est donc toujours respectee ; I_EAN reste facultatif.
 -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
 
@@ -26,11 +27,11 @@
                   <xs:sequence>
                     <xs:element name="CODE_CMDE" type="tNombre12_0"><xs:annotation><xs:documentation>Unique purchase order number | Obligatoire EDICOM : oui | Source : COMMANDE_ENVOI.CODE_CMDE - NUMBER(12,0) - NOT NULL</xs:documentation></xs:annotation></xs:element>
                     <xs:element name="CODE_PDV_FOURN" type="tTexte50_O"><xs:annotation><xs:documentation>Our customer code assigned by the supplier. | Obligatoire EDICOM : oui | Source : COMMANDE_ENVOI.CODE_PDV_FOURN - VARCHAR2(50 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
-                    <xs:element name="I_PDV" type="tTexte50_O"><xs:annotation><xs:documentation>Not required. Internal code of the store/location to be delivered. | Obligatoire EDICOM : oui | Source : COMMANDE_ENVOI.I_PDV - VARCHAR2(50 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                    <xs:element name="I_PDV" type="tTexte50"><xs:annotation><xs:documentation>Not required. Internal code of the store/location to be delivered. | Obligatoire EDICOM : non | Source : COMMANDE_ENVOI.I_PDV - VARCHAR2(50 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
                     <xs:element name="NUMERO_CMDE" type="tTexte100_O"><xs:annotation><xs:documentation>Unique purchase order number | Obligatoire EDICOM : oui | Source : COMMANDE_ENVOI.NUMERO_CMDE - VARCHAR2(100 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
                     <xs:element name="TYPE_CMDE" type="tTexte6_O"><xs:annotation><xs:documentation>CMDE (Hardcoded) | Obligatoire EDICOM : oui | Source : COMMANDE_ENVOI.TYPE_CMDE - VARCHAR2(6 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
                     <xs:element name="DATE_LIVRAISON_CMDE" type="tDate"><xs:annotation><xs:documentation>Delivery date of the goods | Obligatoire EDICOM : oui | Source : COMMANDE_ENVOI.DATE_LIVRAISON_CMDE - DATE - nullable</xs:documentation></xs:annotation></xs:element>
-                    <xs:element name="CODE_ERP1_FOURN" type="tTexte100_O"><xs:annotation><xs:documentation>Not required. Our internal supplier number. | Obligatoire EDICOM : oui | Source : COMMANDE_ENVOI.CODE_ERP1_FOURN - VARCHAR2(100 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                    <xs:element name="CODE_ERP1_FOURN" type="tTexte100"><xs:annotation><xs:documentation>Not required. Our internal supplier number. | Obligatoire EDICOM : non | Source : COMMANDE_ENVOI.CODE_ERP1_FOURN - VARCHAR2(100 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
                     <xs:element name="ENVOYEE_CMDE" type="tNombre12_0"><xs:annotation><xs:documentation>Flag updated after order processing. Always set to -1. | Obligatoire EDICOM : oui | Source : COMMANDE_ENVOI.ENVOYEE_CMDE - NUMBER(12,0) - nullable</xs:documentation></xs:annotation></xs:element>
                     <xs:element name="DATE_ENVOI_CMDE" type="tDateHeure_Vide"><xs:annotation><xs:documentation>Timestamp of the upstream order processing. | Obligatoire EDICOM : non | Source : COMMANDE_ENVOI.DATE_ENVOI_CMDE - DATE - nullable</xs:documentation></xs:annotation></xs:element>
                     <xs:element name="EMAIL_CMDES_FOURN" type="tTexte100"><xs:annotation><xs:documentation>Not required. Email address used to send the purchase order to the supplier. | Obligatoire EDICOM : non | Source : COMMANDE_ENVOI.EMAIL_CMDES_FOURN - VARCHAR2(100 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
@@ -56,12 +57,12 @@
                       <xs:complexType>
                         <xs:sequence>
                           <xs:element name="CODE_CMDE_1" type="tNombre12_0"><xs:annotation><xs:documentation>Same as CODE_CMDE | Obligatoire EDICOM : oui | Source : ARTICLE_COMMANDE_ENVOI.CODE_CMDE - NUMBER(12,0) - NOT NULL</xs:documentation></xs:annotation></xs:element>
-                          <xs:element name="CODE_ARTICLE_FOURN_CMDE" type="tTexte20"><xs:annotation><xs:documentation>Supplier&apos;s item reference. Either I_EAN or CODE_ARTICLE_FOURN_CMDE must be provided. | Obligatoire EDICOM : non | Source : ARTICLE_COMMANDE_ENVOI.CODE_ARTICLE_FOURN_CMDE - VARCHAR2(20 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                          <xs:element name="CODE_ARTICLE_FOURN_CMDE" type="tTexte20_O"><xs:annotation><xs:documentation>Supplier&apos;s item reference. Either I_EAN or CODE_ARTICLE_FOURN_CMDE must be provided. | Obligatoire EDICOM : oui | Source : ARTICLE_COMMANDE_ENVOI.CODE_ARTICLE_FOURN_CMDE - VARCHAR2(20 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
                           <xs:element name="CODE_ERP1_ARTICLE" type="tTexte30_O"><xs:annotation><xs:documentation>Internal item code | Obligatoire EDICOM : oui | Source : ARTICLE_COMMANDE_ENVOI.CODE_ERP1_ARTICLE - VARCHAR2(30 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
                           <xs:element name="QUANTITE_ARTICLE_CMDE" type="tNombre15_3"><xs:annotation><xs:documentation>Ordered quantity | Obligatoire EDICOM : oui | Source : ARTICLE_COMMANDE_ENVOI.QUANTITE_ARTICLE_CMDE - NUMBER(15,3) - nullable</xs:documentation></xs:annotation></xs:element>
                           <xs:element name="TARIF_ARTICLE_CMDE" type="tNombre19_5"><xs:annotation><xs:documentation>Unit price | Obligatoire EDICOM : oui | Source : ARTICLE_COMMANDE_ENVOI.TARIF_ARTICLE_CMDE - NUMBER(19,5) - nullable</xs:documentation></xs:annotation></xs:element>
                           <xs:element name="CODE_ERP1_UNITE_CONSOMMATION" type="tTexte30_O"><xs:annotation><xs:documentation>Order unit of measure | Obligatoire EDICOM : oui | Source : ARTICLE_COMMANDE_ENVOI.CODE_ERP1_UNITE_CONSOMMATION - VARCHAR2(30 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
-                          <xs:element name="LIBELLE_FAMILLE" type="tTexte160_O"><xs:annotation><xs:documentation>Not required. | Obligatoire EDICOM : oui | Source : ARTICLE_COMMANDE_ENVOI.LIBELLE_FAMILLE - VARCHAR2(160 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
+                          <xs:element name="LIBELLE_FAMILLE" type="tTexte160"><xs:annotation><xs:documentation>Not required. | Obligatoire EDICOM : non | Source : ARTICLE_COMMANDE_ENVOI.LIBELLE_FAMILLE - VARCHAR2(160 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
                           <xs:element name="LIBELLE_ARTICLE_CMDE" type="tTexte800_O"><xs:annotation><xs:documentation>Item description | Obligatoire EDICOM : oui | Source : ARTICLE_COMMANDE_ENVOI.LIBELLE_ARTICLE_CMDE - VARCHAR2(800 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
                           <xs:element name="LIBELLE_UNITE_ACHAT" type="tTexte30_O"><xs:annotation><xs:documentation>Description of the purchase unit (number of units per order unit) | Obligatoire EDICOM : oui | Source : ARTICLE_COMMANDE_ENVOI.LIBELLE_UNITE_ACHAT - VARCHAR2(30 BYTE) - nullable</xs:documentation></xs:annotation></xs:element>
                           <xs:element name="TOTAL_ARTICLE_CMDE" type="tNombre19_5_Vide"><xs:annotation><xs:documentation>Line total amount (EUR) | Obligatoire EDICOM : non | Source : ARTICLE_COMMANDE_ENVOI.TOTAL_ARTICLE_CMDE - NUMBER(19,5) - nullable</xs:documentation></xs:annotation></xs:element>
@@ -130,6 +131,14 @@
       <xs:maxLength value="20"/>
     </xs:restriction>
   </xs:simpleType>
+  <xs:simpleType name="tTexte20_O">
+    <xs:annotation><xs:documentation>Texte obligatoire : 1 a 20 caracteres, balise vide refusee.</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:minLength value="1"/>
+      <xs:maxLength value="20"/>
+      <xs:pattern value=".*\S.*"/>
+    </xs:restriction>
+  </xs:simpleType>
   <xs:simpleType name="tTexte30_O">
     <xs:annotation><xs:documentation>Texte obligatoire : 1 a 30 caracteres, balise vide refusee.</xs:documentation></xs:annotation>
     <xs:restriction base="xs:string">
@@ -142,6 +151,12 @@
     <xs:annotation><xs:documentation>Texte facultatif : 40 caracteres maximum, balise vide autorisee.</xs:documentation></xs:annotation>
     <xs:restriction base="xs:string">
       <xs:maxLength value="40"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="tTexte50">
+    <xs:annotation><xs:documentation>Texte facultatif : 50 caracteres maximum, balise vide autorisee.</xs:documentation></xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:maxLength value="50"/>
     </xs:restriction>
   </xs:simpleType>
   <xs:simpleType name="tTexte50_O">
@@ -174,12 +189,10 @@
       <xs:pattern value=".*\S.*"/>
     </xs:restriction>
   </xs:simpleType>
-  <xs:simpleType name="tTexte160_O">
-    <xs:annotation><xs:documentation>Texte obligatoire : 1 a 160 caracteres, balise vide refusee.</xs:documentation></xs:annotation>
+  <xs:simpleType name="tTexte160">
+    <xs:annotation><xs:documentation>Texte facultatif : 160 caracteres maximum, balise vide autorisee.</xs:documentation></xs:annotation>
     <xs:restriction base="xs:string">
-      <xs:minLength value="1"/>
       <xs:maxLength value="160"/>
-      <xs:pattern value=".*\S.*"/>
     </xs:restriction>
   </xs:simpleType>
   <xs:simpleType name="tTexte300_O">
